@@ -3,7 +3,6 @@ export interface UserDataInterface {
   email: string;
   name: string;
   role?: string;
-  token?: string;
   team?: string;
   errorMessage?: string;
 }

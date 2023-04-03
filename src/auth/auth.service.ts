@@ -2,18 +2,19 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nes
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { LoginData } from './dto/login-data.dto';
-import { UserDataInterface } from './interfaces/UserData';
-import { UserData } from './schemas/userData.schema';
+import { UserDataInterface } from '../shared/interfaces/UserData';
+import { UserData } from '../shared/schemas/userData.schema';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
 
-  constructor( @InjectModel(UserData.name) private userModel: Model<UserData>) {}
+  constructor( @InjectModel(UserData.name) private userModel: Model<UserData>, private _userService: UsersService) {}
   
-  async getUser(data: LoginData): Promise<UserData> {
+  async checkUser(data: LoginData): Promise<UserData> {
     const {email} = data;
     
-    const currentUser = await this.getUserByProperty("email", email);
+    const currentUser = await this._userService.getUserByProperty("email", email);
     
     if(currentUser) {
       return currentUser;
@@ -22,33 +23,38 @@ export class AuthService {
     }
   }
   
-  async getUsers(): Promise<UserData[]> {
-    return this.userModel.find();
-  }
-  
-  async getUserById(uid: string): Promise<UserData> {
-    return this.userModel.findById(uid);
-  }
-  
-  async getUserByProperty(property: string, propertyValue: string): Promise<UserData> {
-    return this.userModel.findOne({ [property]: propertyValue });
-  }
-  
   async createUser(data: UserDataInterface) {
     try {
-        const createdUser = new this.userModel(data);
-        const user = await createdUser.save();
+        data.role = 'user';
+        data.team = null;
+        const {email} = data;
+        const user = await this._userService.getUserByProperty("email", email);
+        
+        // If user does not exist create a new one for register
+        if(!user) {
+          const createdUser = new this.userModel(data);
+          const user = await createdUser.save();
 
-        return {
-          status: HttpStatus.CREATED, data: [user]
+          return {
+            status: HttpStatus.CREATED, data: [user]
+          }
+        } else {
+          // If user exists throw an error
+          throw new  HttpException('User Already Exists.', HttpStatus.BAD_REQUEST);
         }
+        
     } catch(e) {
-        throw new BadRequestException({ cause: e, description: 'Some error description' }, 'Something bad happened');
+      if(e.status != 400) {
+        throw new  HttpException('Something wrong happened.', HttpStatus.INTERNAL_SERVER_ERROR);
+      } else {
+        throw new  HttpException('User Already Exists.', HttpStatus.BAD_REQUEST);
+      }
+      
     }
   }
 
   async validateUser(loginData: LoginData): Promise<UserData> {
-    const userData = await this.getUser(loginData);
+    const userData = await this.checkUser(loginData);
     const {password} = userData; 
     
     if(password === loginData.password){
