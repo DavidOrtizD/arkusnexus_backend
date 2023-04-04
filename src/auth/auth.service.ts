@@ -1,25 +1,26 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { LoginData } from './dto/login-data.dto';
 import { UserDataInterface } from '../shared/interfaces/UserData';
 import { UserData } from '../shared/schemas/userData.schema';
 import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
 
-  constructor( @InjectModel(UserData.name) private userModel: Model<UserData>, private _userService: UsersService) {}
+  constructor( @InjectModel(UserData.name) private userModel: Model<UserData>, private _userService: UsersService, private jwtService: JwtService) {}
   
   async checkUser(data: LoginData): Promise<UserData> {
     const {email} = data;
     
-    const currentUser = await this._userService.getUserByProperty("email", email);
+    const currentUser = await this._userService.getUserByPropertyInternal("email", email);
     
     if(currentUser) {
       return currentUser;
     } else {
-      throw new  HttpException('Not Found', HttpStatus.NOT_FOUND);
+      throw new  HttpException('User Not Found.', HttpStatus.UNAUTHORIZED);
     }
   }
   
@@ -53,12 +54,15 @@ export class AuthService {
     }
   }
 
-  async validateUser(loginData: LoginData): Promise<UserData> {
+  async validateUser(loginData: LoginData): Promise<{usrData:UserDataInterface, access_token:string}> {
     const userData = await this.checkUser(loginData);
-    const {password} = userData; 
+    const {password, email} = userData; 
     
     if(password === loginData.password){
-      return userData;
+        const usr = await  this._userService.getUserByProperty("email", email);
+        const payload = {username: usr.name, sub: usr.uid};
+      
+       return { usrData: usr, access_token: await this.jwtService.signAsync(payload) }
     } else {
       throw new  HttpException('Forbiden Access', HttpStatus.FORBIDDEN);
     }
