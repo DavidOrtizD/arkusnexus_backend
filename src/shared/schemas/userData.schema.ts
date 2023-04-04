@@ -24,6 +24,15 @@ export class UserData {
   
   @Prop()
   password: string;
+  
+  @Prop()
+  englishLevel: string;
+  
+  @Prop()
+  techSkills: string;
+  
+  @Prop()
+  cv: string;
 
 }
 const UserSchema = SchemaFactory.createForClass(UserData);

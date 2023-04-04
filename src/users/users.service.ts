@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserData } from '../shared/schemas/userData.schema';
@@ -23,5 +23,23 @@ export class UsersService {
   
   async getUserByPropertyInternal(property: string, propertyValue: string): Promise<UserData> {
     return this.userModel.findOne({ [property]: propertyValue });
+  }
+
+  async updateUserById(uid: string, usrData: UserDataInterface): Promise<any> {
+    try {
+      return this.userModel.updateOne({_id:uid}, { ...usrData });
+    } catch {
+      throw new  HttpException('User Not Updated.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    
+  }
+
+  async deleteUserById(uid: string): Promise<any> {
+    try {
+      return this.userModel.deleteOne({_id: uid});
+    } catch {
+      throw new  HttpException('User Not Deleted.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    
   }
 }

@@ -28,6 +28,10 @@ export class AuthService {
     try {
         data.role = 'user';
         data.team = null;
+        data.cv = null;
+        data.englishLevel = null;
+        data.techSkills = null;
+
         const {email} = data;
         const user = await this._userService.getUserByProperty("email", email);
         
