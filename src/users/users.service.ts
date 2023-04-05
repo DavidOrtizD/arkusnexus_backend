@@ -2,7 +2,8 @@ import { HttpException, Injectable, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserData } from '../shared/schemas/userData.schema';
-import { UserDataInterface } from '../shared/interfaces/UserData';
+import { RegisterUserData } from 'src/shared/interfaces/registerUserData';
+import { encrypt } from '../shared/encrypt.util';
 
 @Injectable()
 export class UsersService {
@@ -17,21 +18,26 @@ export class UsersService {
     return this.userModel.findById(uid);
   }
   
-  async getUserByProperty(property: string, propertyValue: string): Promise<UserDataInterface> {
-    return this.userModel.findOne({ [property]: propertyValue });
+  async getUserByProperty(property: string, propertyValue: string): Promise<RegisterUserData> {
+     
+    const data = await this.userModel.findOne({ [property]: propertyValue });
+    data.password = null;
+    return data;
   }
   
   async getUserByPropertyInternal(property: string, propertyValue: string): Promise<UserData> {
     return this.userModel.findOne({ [property]: propertyValue });
   }
 
-  async createUser(data: UserDataInterface) {
+  async createUser(data: RegisterUserData) {
     try {
         const {email} = data;
         const user = await this.getUserByProperty("email", email);
         
         // If user does not exist create a new one for register
         if(!user) {
+          data.password = await encrypt(data.password);
+          
           const createdUser = new this.userModel(data);
           const user = await createdUser.save();
 
@@ -53,8 +59,11 @@ export class UsersService {
     }
   }
 
-  async updateUserById(uid: string, usrData: UserDataInterface): Promise<any> {
+  async updateUserById(uid: string, usrData: RegisterUserData): Promise<any> {
     try {
+      if(usrData.password){
+        usrData.password = encrypt(usrData.password);
+      }
       return this.userModel.updateOne({_id:uid}, { ...usrData });
     } catch {
       throw new  HttpException('User Not Updated.', HttpStatus.INTERNAL_SERVER_ERROR);
