@@ -35,13 +35,13 @@ export class AuthService {
         data.techSkills = null;
 
         const {email, password} = data;
-        const user = await this._userService.getUserByProperty("email", email);
+        const user = await this._userService.getUserByPropertyInternal("email", email);
         
         // If user does not exist create a new one for register
         if(!user) {
           data.password = await encrypt(password);
           const createdUser = new this.userModel(data);
-          const user = await createdUser.save();
+          const usr = await createdUser.save();
 
           return {
             status: HttpStatus.CREATED, data: [user]
