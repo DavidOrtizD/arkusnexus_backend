@@ -62,7 +62,7 @@ export class UsersService {
   async updateUserById(uid: string, usrData: RegisterUserData): Promise<any> {
     try {
       if(usrData.password){
-        usrData.password = encrypt(usrData.password);
+        usrData.password = await encrypt(usrData.password);
       }
       return this.userModel.updateOne({_id:uid}, { ...usrData });
     } catch {

@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { LoginData } from './dto/login-data.dto';
-import { UserDataInterface } from '../shared/interfaces/UserData';
 import { UserData } from '../shared/schemas/userData.schema';
 import { UsersService } from '../users/users.service';
 import { encrypt, comparePass } from '../shared/encrypt.util';
@@ -61,7 +60,7 @@ export class AuthService {
     }
   }
 
-  async validateUser(loginData: LoginData): Promise<{usrData:UserDataInterface, access_token:string}> {
+  async validateUser(loginData: LoginData): Promise<{usrData:RegisterUserData, access_token:string}> {
     const userData = await this.checkUser(loginData);
     const {password, email} = userData; 
     

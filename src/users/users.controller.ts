@@ -1,8 +1,8 @@
 import { Controller, Get, Param, UseGuards, Post, Delete, Body, Put } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../auth/guard/auth.guard';
-import { UserDataInterface } from '../shared/interfaces/UserData';
 import { UserDataDTO } from './dto/user-data.dto';
+import { RegisterUserData } from 'src/shared/interfaces/registerUserData';
 
 @Controller('users')
 export class UsersController {
@@ -11,13 +11,13 @@ export class UsersController {
 
   @UseGuards(AuthGuard)
   @Get("/")
-  getAllUsers(): Promise<UserDataInterface[]> {
+  getAllUsers(): Promise<RegisterUserData[]> {
     return this._userService.getUsers();
   }
 
   @UseGuards(AuthGuard)
   @Get("/user/:id")
-  getUserById(@Param('id') id: string ): Promise<UserDataInterface> {
+  getUserById(@Param('id') id: string ): Promise<RegisterUserData> {
     return this._userService.getUserById(id);
   }
 
