@@ -25,6 +25,34 @@ export class UsersService {
     return this.userModel.findOne({ [property]: propertyValue });
   }
 
+  async createUser(data: UserDataInterface) {
+    try {
+        const {email} = data;
+        const user = await this.getUserByProperty("email", email);
+        
+        // If user does not exist create a new one for register
+        if(!user) {
+          const createdUser = new this.userModel(data);
+          const user = await createdUser.save();
+
+          return {
+            status: HttpStatus.CREATED, data: [user]
+          }
+        } else {
+          // If user exists throw an error
+          throw new  HttpException('User Already Exists.', HttpStatus.BAD_REQUEST);
+        }
+        
+    } catch(e) {
+      if(e.status != 400) {
+        throw new  HttpException('Something wrong happened.', HttpStatus.INTERNAL_SERVER_ERROR);
+      } else {
+        throw new  HttpException('User Already Exists.', HttpStatus.BAD_REQUEST);
+      }
+      
+    }
+  }
+
   async updateUserById(uid: string, usrData: UserDataInterface): Promise<any> {
     try {
       return this.userModel.updateOne({_id:uid}, { ...usrData });
