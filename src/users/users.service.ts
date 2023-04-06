@@ -21,7 +21,9 @@ export class UsersService {
   async getUserByProperty(property: string, propertyValue: string): Promise<RegisterUserData> {
      
     const data = await this.userModel.findOne({ [property]: propertyValue });
-    data.password = null;
+    if(data) {
+      data.password = null;
+    }
     return data;
   }
   
@@ -39,10 +41,10 @@ export class UsersService {
           data.password = await encrypt(data.password);
           
           const createdUser = new this.userModel(data);
-          const user = await createdUser.save();
+          const usr = await createdUser.save();
 
           return {
-            status: HttpStatus.CREATED, data: [user]
+            status: HttpStatus.CREATED, data: [usr]
           }
         } else {
           // If user exists throw an error
@@ -61,12 +63,18 @@ export class UsersService {
 
   async updateUserById(uid: string, usrData: RegisterUserData): Promise<any> {
     try {
-      if(usrData.password){
+      if(usrData.password.trim().length > 0){
         usrData.password = await encrypt(usrData.password);
+      } else {
+        throw new  HttpException('Password can not be empty.', HttpStatus.BAD_REQUEST);  
       }
       return this.userModel.updateOne({_id:uid}, { ...usrData });
-    } catch {
-      throw new  HttpException('User Not Updated.', HttpStatus.INTERNAL_SERVER_ERROR);
+    } catch(e) {
+      if(e.response) {
+        throw new  HttpException(e.response, HttpStatus.BAD_REQUEST);  
+      } else {
+        throw new  HttpException('User Not Updated.', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     }
     
   }
